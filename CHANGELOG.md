@@ -4,6 +4,13 @@ All notable changes to `@milkeyskills/sdk` will be documented in this file.
 
 The format is based on Keep a Changelog and the project follows Semantic Versioning.
 
+## [0.1.3](https://github.com/ashish200729/milkeyskills-sdk/compare/v0.1.2...v0.1.3) (2026-03-30)
+
+
+### Bug Fixes
+
+* harden sdk tool execution and release flow ([2412404](https://github.com/ashish200729/milkeyskills-sdk/commit/24124041ef7b43402b5ce69ea95575112952a9ad))
+
 ## [0.1.2] - 2026-03-30
 
 ### Changed
