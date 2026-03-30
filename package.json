@@ -1,0 +1,72 @@
+{
+  "name": "@milkeyskills/sdk",
+  "version": "0.1.1",
+  "description": "Milkey skills infrastructure SDK for connecting multi-skill AI workflows into OpenAI, Anthropic, Gemini, and other AI stacks.",
+  "keywords": [
+    "milkey",
+    "ai",
+    "sdk",
+    "skills",
+    "skill infrastructure",
+    "skills infrastructure",
+    "multi-skill",
+    "multi-skill infrastructure",
+    "agent skills",
+    "ai skills",
+    "openai",
+    "anthropic",
+    "gemini",
+    "tools",
+    "agents"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashish200729/milkeyskills-sdk.git"
+  },
+  "homepage": "https://github.com/ashish200729/milkeyskills-sdk",
+  "bugs": {
+    "url": "https://github.com/ashish200729/milkeyskills-sdk/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "release:check": "npm run check && npm run test && npm run build && npm pack --dry-run --cache ./.npm-cache",
+    "prepublishOnly": "npm run release:check",
+    "example:openai-chat": "tsx examples/openai-chat-completions.ts",
+    "example:openai-responses": "tsx examples/openai-responses.ts",
+    "example:openai-inline": "tsx examples/openai-inline-loop.ts",
+    "example:openai-chat:node": "node examples/openai-chat-completions.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "openai": "^6.33.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "tsup": "^8.2.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}
