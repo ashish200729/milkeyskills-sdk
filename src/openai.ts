@@ -1,3 +1,4 @@
+import { MilkeyToolCallError } from "./errors";
 import { getToolDescriptors, toCanonicalToolName, toProviderAlias } from "./tooling";
 import type {
   CanonicalToolName,
@@ -86,7 +87,7 @@ async function executeOpenAIFunctionCall(
   const alias = toProviderAlias(canonicalName);
   const response = await client.callTool({
     name: canonicalName,
-    arguments: JSON.parse(item.arguments),
+    arguments: parseToolArguments(item.arguments, item.name),
   });
 
   return {
@@ -94,6 +95,33 @@ async function executeOpenAIFunctionCall(
     alias,
     response,
   };
+}
+
+function parseToolArguments(rawArguments: string, toolName: string): Record<string, unknown> {
+  if (!rawArguments.trim()) {
+    return {};
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawArguments);
+  } catch {
+    throw new MilkeyToolCallError(
+      toolName,
+      rawArguments,
+      `OpenAI tool call arguments for ${toolName} were not valid JSON.`,
+    );
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new MilkeyToolCallError(
+      toolName,
+      rawArguments,
+      `OpenAI tool call arguments for ${toolName} must decode to a JSON object.`,
+    );
+  }
+
+  return parsed as Record<string, unknown>;
 }
 
 function isOpenAIFunctionCallItem(value: unknown): value is OpenAIFunctionCallItem {

@@ -1,42 +1,72 @@
 import OpenAI from "openai";
-import { milkey } from "../src";
+import { milkey } from "../src/index.js";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL ?? "https://opencode.ai/zen/v1",
-});
-const milkeyClient = milkey.createClient({
-  baseUrl: process.env.MILKEY_BASE_URL!,
-  apiKey: process.env.MILKEY_API_KEY!,
-});
-
-const tools = milkey.openai.chat.tools({
-  client: milkeyClient,
-});
-
-const first = await openai.responses.create({
-  model: process.env.OPENAI_MODEL ?? "minimax-m2.5-free",
-  input: "Find the best Milkey skill for PostgreSQL query optimization.",
-  tools: milkey.openai.responses.tools({
-    client: milkeyClient,
-    delivery: "inline",
-  }),
-});
-
-const outputs = await milkey.openai.responses.outputs(first, milkeyClient);
-
-if (outputs.length > 0) {
-  const second = await openai.responses.create({
-    model: process.env.OPENAI_MODEL ?? "minimax-m2.5-free",
-    previous_response_id: first.id,
-    input: outputs,
-    tools: milkey.openai.responses.tools({
-      client: milkeyClient,
-      delivery: "inline",
-    }),
-  });
-
-  console.log(second.output_text);
+function requireEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`Missing ${name}.`);
+  }
+  return value;
 }
 
-console.log(tools.length);
+function numberFromEnv(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`${name} must be a positive number. Received: ${value}`);
+  }
+  return parsed;
+}
+
+const openai = new OpenAI({
+  apiKey: requireEnv("OPENAI_API_KEY"),
+  baseURL: process.env.OPENAI_BASE_URL ?? "https://opencode.ai/zen/v1",
+  timeout: numberFromEnv("OPENAI_TIMEOUT_MS", 30_000),
+  maxRetries: numberFromEnv("OPENAI_MAX_RETRIES", 0),
+});
+
+const milkeyClient = milkey.createClient({
+  baseUrl: requireEnv("MILKEY_BASE_URL"),
+  apiKey: requireEnv("MILKEY_API_KEY"),
+  timeoutMs: numberFromEnv("MILKEY_TIMEOUT_MS", 15_000),
+});
+
+const model = process.env.OPENAI_MODEL ?? "minimax-m2.5-free";
+const maxTurns = numberFromEnv("MAX_TOOL_TURNS", 4);
+const prompt =
+  process.env.TEST_PROMPT ??
+  "Find the best Milkey skill for PostgreSQL query optimization.";
+
+const tools = milkey.openai.responses.tools({
+  client: milkeyClient,
+  delivery: "inline",
+});
+
+let response = await openai.responses.create({
+  model,
+  input: prompt,
+  tools,
+});
+
+for (let turn = 1; turn <= maxTurns; turn += 1) {
+  const outputs = await milkey.openai.responses.outputs(response, milkeyClient);
+  if (outputs.length === 0) {
+    console.log(response.output_text);
+    process.exit(0);
+  }
+
+  response = await openai.responses.create({
+    model,
+    previous_response_id: response.id,
+    input: outputs,
+    tools,
+  });
+}
+
+throw new Error(
+  `Model did not finish within ${maxTurns} tool turns. The conversation kept requesting tools.`,
+);

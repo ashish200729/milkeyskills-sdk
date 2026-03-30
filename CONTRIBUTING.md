@@ -35,4 +35,4 @@ For automated npm publishing, configure one of these:
 - npm trusted publishing for this GitHub repository, or
 - an `NPM_TOKEN` repository secret with publish access
 
-The release workflow expects `NPM_TOKEN` unless trusted publishing is configured and the publish step is updated accordingly.
+The release workflow is set up to support either approach. Keep the publish job on a Node.js version that matches npm's current trusted publishing requirements.

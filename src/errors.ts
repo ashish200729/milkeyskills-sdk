@@ -37,3 +37,27 @@ export class MilkeyConfigError extends MilkeyError {
     this.name = "MilkeyConfigError";
   }
 }
+
+export class MilkeyTimeoutError extends MilkeyError {
+  readonly timeoutMs: number;
+  readonly path: string;
+
+  constructor(timeoutMs: number, path: string) {
+    super(`Milkey request timed out after ${timeoutMs}ms while calling ${path}`);
+    this.name = "MilkeyTimeoutError";
+    this.timeoutMs = timeoutMs;
+    this.path = path;
+  }
+}
+
+export class MilkeyToolCallError extends MilkeyError {
+  readonly toolName: string;
+  readonly rawArguments: string;
+
+  constructor(toolName: string, rawArguments: string, message: string) {
+    super(message);
+    this.name = "MilkeyToolCallError";
+    this.toolName = toolName;
+    this.rawArguments = rawArguments;
+  }
+}

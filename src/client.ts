@@ -1,4 +1,9 @@
-import { MilkeyConfigError, MilkeyProblemError, MilkeyResponseError } from "./errors";
+import {
+  MilkeyConfigError,
+  MilkeyProblemError,
+  MilkeyResponseError,
+  MilkeyTimeoutError,
+} from "./errors";
 import { toCanonicalToolName } from "./tooling";
 import type {
   GetSkillInput,
@@ -21,17 +26,14 @@ const defaultTimeoutMs = 30_000;
 
 export function createClient(config: MilkeyClientConfig): MilkeyClient {
   const baseUrl = normalizeBaseUrl(config.baseUrl);
-  const apiKey = config.apiKey.trim();
-  if (!apiKey) {
-    throw new MilkeyConfigError("Milkey API key is required.");
-  }
+  const apiKey = normalizeApiKey(config.apiKey);
 
   const fetchImpl = config.fetch ?? globalThis.fetch;
   if (!fetchImpl) {
     throw new MilkeyConfigError("A global fetch implementation is required.");
   }
 
-  const timeoutMs = config.timeoutMs ?? defaultTimeoutMs;
+  const timeoutMs = normalizeTimeoutMs(config.timeoutMs);
   const defaultHeaders = config.headers ?? {};
   const userAgent = config.userAgent ?? "@milkey/sdk";
 
@@ -40,13 +42,16 @@ export function createClient(config: MilkeyClientConfig): MilkeyClient {
     init: RequestInit,
     options?: RequestOptions,
   ): Promise<T> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const timeoutController = new AbortController();
+    const signal = options?.signal
+      ? AbortSignal.any([options.signal, timeoutController.signal])
+      : timeoutController.signal;
+    const timeout = setTimeout(() => timeoutController.abort(), timeoutMs);
 
     try {
       const response = await fetchImpl(new URL(path, `${baseUrl}/`), {
         ...init,
-        signal: options?.signal ?? controller.signal,
+        signal,
         headers: {
           Accept: "application/json, application/problem+json",
           Authorization: `Bearer ${apiKey}`,
@@ -68,6 +73,11 @@ export function createClient(config: MilkeyClientConfig): MilkeyClient {
       }
 
       return (await response.json()) as T;
+    } catch (error) {
+      if (timeoutController.signal.aborted && !options?.signal?.aborted) {
+        throw new MilkeyTimeoutError(timeoutMs, path);
+      }
+      throw error;
     } finally {
       clearTimeout(timeout);
     }
@@ -152,12 +162,42 @@ export function createClient(config: MilkeyClientConfig): MilkeyClient {
   };
 }
 
-function normalizeBaseUrl(rawBaseUrl: string): string {
+function normalizeBaseUrl(rawBaseUrl: unknown): string {
+  if (typeof rawBaseUrl !== "string") {
+    throw new MilkeyConfigError("Milkey baseUrl is required.");
+  }
   const trimmed = rawBaseUrl.trim();
   if (!trimmed) {
     throw new MilkeyConfigError("Milkey baseUrl is required.");
   }
   return trimmed.replace(/\/+$/, "");
+}
+
+function normalizeApiKey(rawApiKey: unknown): string {
+  if (typeof rawApiKey !== "string") {
+    throw new MilkeyConfigError("Milkey API key is required.");
+  }
+
+  const trimmed = rawApiKey.trim();
+  if (!trimmed) {
+    throw new MilkeyConfigError("Milkey API key is required.");
+  }
+
+  return trimmed;
+}
+
+function normalizeTimeoutMs(timeoutMs: number | undefined): number {
+  if (timeoutMs === undefined) {
+    return defaultTimeoutMs;
+  }
+
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new MilkeyConfigError(
+      `Milkey timeoutMs must be a positive number. Received: ${timeoutMs}`,
+    );
+  }
+
+  return timeoutMs;
 }
 
 function buildQueryPath(

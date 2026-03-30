@@ -39,17 +39,56 @@ const tools = milkey.openai.chat.tools({
   client: milkeyClient,
 });
 
-const response = await openai.chat.completions.create({
+const messages = [
+  {
+    role: "user",
+    content: "Find the best Milkey skill for PostgreSQL query optimization.",
+  },
+];
+
+const first = await openai.chat.completions.create({
   model: "gpt-5",
-  messages: [
-    {
-      role: "user",
-      content: "Find the best Milkey skill for PostgreSQL query optimization.",
-    },
-  ],
+  messages,
   tools,
 });
+
+const assistant = first.choices[0]?.message;
+if (!assistant) {
+  throw new Error("No assistant message returned.");
+}
+
+messages.push({
+  role: "assistant",
+  content: assistant.content ?? "",
+  tool_calls: assistant.tool_calls?.map((toolCall) => ({
+    id: toolCall.id,
+    type: "function",
+    function: {
+      name: toolCall.function.name,
+      arguments: toolCall.function.arguments,
+    },
+  })),
+});
+
+if (assistant.tool_calls?.length) {
+  const toolMessages = await milkey.openai.chat.messages(assistant, milkeyClient);
+  for (const toolMessage of toolMessages) {
+    messages.push(toolMessage);
+  }
+
+  const second = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages,
+    tools,
+  });
+
+  console.log(second.choices[0]?.message?.content ?? "");
+} else {
+  console.log(assistant.content ?? "");
+}
 ```
+
+For production use, keep iterating until the model stops returning `tool_calls` and enforce a max turn count or request timeout. See the OpenAI chat completion examples for a bounded loop.
 
 ## Supported Integrations
 

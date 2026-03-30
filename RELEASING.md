@@ -80,4 +80,6 @@ For automated npm publishing, configure one of these in the GitHub repo:
 - `NPM_TOKEN` secret with publish access
 - npm trusted publishing for this repository
 
+Trusted publishing support changes over time. Keep the publish job on a Node.js version that satisfies npm's current trusted publishing requirements. The workflow in this repo uses Node 22 for the publish job for that reason.
+
 Without one of those, GitHub can run CI and prepare releases, but it cannot publish to npm.

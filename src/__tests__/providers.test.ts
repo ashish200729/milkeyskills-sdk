@@ -55,4 +55,53 @@ describe("provider adapters", () => {
     expect(Object.keys(tools)).toContain("milkey_resolve_skill");
     expect(result).toEqual({ result: "ok" });
   });
+
+  it("builds anthropic tool results from tool use blocks", async () => {
+    const results = await anthropic.messages(
+      [
+        {
+          id: "toolu_123",
+          name: "milkey_resolve_skill",
+          input: { query: "postgres" },
+        },
+      ],
+      client,
+    );
+
+    expect(results).toEqual([
+      {
+        type: "tool_result",
+        tool_use_id: "toolu_123",
+        content: JSON.stringify({ result: "ok" }),
+      },
+    ]);
+  });
+
+  it("builds gemini function response parts", async () => {
+    const result = await gemini.parts(
+      [
+        {
+          id: "gem_call_1",
+          name: "milkey_resolve_skill",
+          args: { query: "postgres" },
+        },
+      ],
+      client,
+    );
+
+    expect(result).toEqual({
+      role: "user",
+      parts: [
+        {
+          functionResponse: {
+            id: "gem_call_1",
+            name: "milkey_resolve_skill",
+            response: {
+              result: { result: "ok" },
+            },
+          },
+        },
+      ],
+    });
+  });
 });
