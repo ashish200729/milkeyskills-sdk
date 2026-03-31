@@ -4,6 +4,18 @@ All notable changes to `@milkeyskills/sdk` will be documented in this file.
 
 The format is based on Keep a Changelog and the project follows Semantic Versioning.
 
+## [0.1.5](https://github.com/ashish200729/milkeyskills-sdk/compare/v0.1.4...v0.1.5) (2026-03-31)
+
+
+### Features
+
+* add provider best-path adapter modes ([3d748d5](https://github.com/ashish200729/milkeyskills-sdk/commit/3d748d566584a04fd857a548f378131137c7a1ab))
+
+
+### Bug Fixes
+
+* harden sdk tool execution and release flow ([2412404](https://github.com/ashish200729/milkeyskills-sdk/commit/24124041ef7b43402b5ce69ea95575112952a9ad))
+
 ## [0.1.4] - 2026-03-31
 
 ### Added

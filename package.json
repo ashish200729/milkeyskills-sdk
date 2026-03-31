@@ -1,6 +1,6 @@
 {
   "name": "@milkeyskills/sdk",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Milkey skills infrastructure SDK for connecting multi-skill AI workflows into OpenAI, Anthropic, Gemini, and other AI stacks.",
   "keywords": [
     "milkey",
