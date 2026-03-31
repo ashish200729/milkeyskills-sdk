@@ -94,9 +94,36 @@ For production use, keep iterating until the model stops returning `tool_calls` 
 
 - OpenAI-compatible chat completions
 - OpenAI responses and realtime-style hosted tool delivery
-- Anthropic tool integrations
-- Gemini function-calling integrations
-- AI SDK native tool integrations
+- Anthropic inline and hosted MCP integrations
+- Gemini function-calling integrations, Gemini Interactions hosted MCP helpers, and helpers for the official Google Gen AI SDK
+- AI SDK native inline tool helpers
+
+Hosted remote MCP delivery is currently best supported through OpenAI Responses, Anthropic, and Gemini Interactions. OpenAI Chat, Gemini generateContent, and AI SDK default to inline tools for portability and predictability.
+
+## Provider Matrix
+
+| Provider | API Variant | `mode: "auto"` | Supported Modes | Recommended Helper |
+| --- | --- | --- | --- | --- |
+| OpenAI | Chat Completions | `inline` | `inline`, `hosted` | `milkey.openai.chat.tools(...)` |
+| OpenAI | Responses API | `hosted` | `inline`, `hosted` | `milkey.openai.responses.tools(...)` |
+| OpenAI | Realtime | `hosted` | `hosted` | `milkey.openai.realtime.tools(...)` |
+| Anthropic | Messages API | `hosted` | `inline`, `hosted` | `milkey.anthropic.config(...)` |
+| Gemini | `generateContent` | `inline` | `inline` | `milkey.gemini.config(...)` |
+| Gemini | Interactions API | `hosted` | `hosted` | `milkey.gemini.interactions.config(...)` |
+| AI SDK | Inline tools | `inline` | `inline` | `milkey.aiSdk.tools(...)` |
+
+## Migration Notes
+
+- Existing `delivery` options continue to work.
+- New `mode` options are additive and support `inline`, `hosted`, and `auto` where meaningful.
+- `mode: "auto"` now resolves to the best-path adapter mode for that exact provider/API variant.
+- OpenAI inline tool schemas now normalize optional properties for `strict: true` compatibility.
+- Anthropic hosted users can prefer `milkey.anthropic.config(...)` to get the required MCP beta automatically.
+- Gemini users now have two documented paths:
+  - `milkey.gemini.config(...)` for `generateContent` inline function calling
+  - `milkey.gemini.interactions.config(...)` for hosted MCP on the Interactions API
+- AI SDK users now have two paths:
+  - `milkey.aiSdk.tools(...)` for inline tools
 
 ## Versioning
 
@@ -116,7 +143,7 @@ npm update @milkeyskills/sdk
 Pin a specific version with:
 
 ```bash
-npm install @milkeyskills/sdk@0.1.0
+npm install @milkeyskills/sdk@0.1.4
 ```
 
 ## Verify Availability

@@ -1,3 +1,4 @@
+import { getCapability, resolveMode, resolveRequestedMode } from "./capabilities";
 import { getToolDescriptors, toCanonicalToolName, toProviderAlias } from "./tooling";
 import type {
   CanonicalToolName,
@@ -7,6 +8,7 @@ import type {
 } from "./types";
 
 type Delivery = "auto" | "hosted" | "inline";
+const mcpBeta = "mcp-client-2025-04-04";
 
 async function executeToolUse(
   block: { id: string; name: string; input: Record<string, unknown> },
@@ -27,12 +29,30 @@ async function executeToolUse(
 }
 
 export const anthropic = {
+  mcpBeta,
+  capabilities: getCapability("anthropic.messages"),
+  resolveMode({
+    mode,
+    delivery,
+  }: {
+    mode?: Delivery;
+    delivery?: Delivery;
+  } = {}) {
+    const requestedMode = resolveRequestedMode({
+      mode,
+      delivery,
+      fallback: "auto",
+    });
+    return resolveMode("anthropic.messages", requestedMode);
+  },
   tools({
     client,
     allowedTools,
+    mode,
     delivery = "auto",
-  }: InlineToolOptions & { delivery?: Delivery }) {
-    if (delivery !== "inline") {
+  }: InlineToolOptions & { mode?: Delivery; delivery?: Delivery }) {
+    const resolved = anthropic.resolveMode({ mode, delivery });
+    if (resolved.selectedMode !== "inline") {
       return {
         mcp_servers: [
           {
@@ -67,6 +87,21 @@ export const anthropic = {
         input_schema: descriptor.inputSchema,
       })),
     };
+  },
+  config({
+    client,
+    allowedTools,
+    mode,
+    delivery = "auto",
+  }: InlineToolOptions & { mode?: Delivery; delivery?: Delivery }) {
+    const resolved = anthropic.resolveMode({ mode, delivery });
+    const config = anthropic.tools({ client, allowedTools, mode, delivery });
+    return resolved.selectedMode === "inline"
+      ? config
+      : {
+          betas: [mcpBeta],
+          ...config,
+        };
   },
   async messages(
     blocks: Array<{ id: string; name: string; input: Record<string, unknown> }>,

@@ -4,6 +4,19 @@ All notable changes to `@milkeyskills/sdk` will be documented in this file.
 
 The format is based on Keep a Changelog and the project follows Semantic Versioning.
 
+## [0.1.4] - 2026-03-31
+
+### Added
+- internal provider capability metadata and best-path mode resolution
+- additive `mode` support for provider adapters where `auto`, `inline`, and `hosted` are meaningful
+- Gemini official SDK helpers for `generateContent` and hosted MCP helpers for the Interactions API
+- Anthropic hosted request config helper with MCP beta support
+- additional provider examples and adapter coverage
+
+### Changed
+- improved OpenAI strict-schema compatibility for inline tool definitions
+- expanded README with a provider support matrix and migration notes
+
 ## [0.1.3](https://github.com/ashish200729/milkeyskills-sdk/compare/v0.1.2...v0.1.3) (2026-03-30)
 
 

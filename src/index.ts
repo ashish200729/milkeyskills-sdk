@@ -12,6 +12,7 @@ import {
 import { gemini } from "./gemini";
 import { openai } from "./openai";
 
+export * from "./capabilities";
 export { createClient } from "./client";
 export { anthropic } from "./anthropic";
 export { aiSdk } from "./ai-sdk";

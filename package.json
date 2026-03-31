@@ -1,6 +1,6 @@
 {
   "name": "@milkeyskills/sdk",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Milkey skills infrastructure SDK for connecting multi-skill AI workflows into OpenAI, Anthropic, Gemini, and other AI stacks.",
   "keywords": [
     "milkey",
@@ -57,17 +57,26 @@
     "release:check": "npm run check && npm run test && npm run build && npm pack --dry-run --cache ./.npm-cache",
     "release:publish": "npm publish --access public",
     "prepublishOnly": "npm run release:check",
+    "example:anthropic-hosted": "tsx examples/anthropic-hosted.ts",
+    "example:gemini-official": "tsx examples/gemini-official-sdk.ts",
+    "example:gemini-interactions": "tsx examples/gemini-interactions-hosted.ts",
+    "example:ai-sdk-inline": "tsx examples/ai-sdk-inline.ts",
     "example:openai-chat": "tsx examples/openai-chat-completions.ts",
     "example:openai-responses": "tsx examples/openai-responses.ts",
     "example:openai-inline": "tsx examples/openai-inline-loop.ts",
     "example:openai-chat:node": "node examples/openai-chat-completions.mjs"
   },
   "devDependencies": {
+    "@ai-sdk/openai": "^3.0.49",
+    "@anthropic-ai/sdk": "^0.64.0",
     "@types/node": "^24.0.0",
+    "@types/json-schema": "^7.0.15",
+    "ai": "^6.0.141",
+    "@google/genai": "^1.47.0",
     "openai": "^6.33.0",
     "ts-node": "^10.9.2",
-    "tsx": "^4.20.3",
     "tsup": "^8.2.4",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vitest": "^3.1.4"
   }

@@ -28,10 +28,56 @@ describe("openai adapters", () => {
     });
 
     const tools = openai.chat.tools({ client });
-    const firstTool = tools[0] as { function: { name: string } };
+    const firstTool = tools[0] as {
+      function: {
+        name: string;
+        parameters: {
+          required: string[];
+          properties: {
+            category?: { type: string[] };
+          };
+        };
+      };
+    };
 
     expect(tools).toHaveLength(3);
     expect(firstTool.function.name).toBe("milkey_resolve_skill");
+    expect(firstTool.function.parameters.required).toEqual(["query", "category"]);
+    expect(firstTool.function.parameters.properties.category?.type).toEqual([
+      "string",
+      "null",
+    ]);
+  });
+
+  it("passes hosted approval filters through for responses tools", () => {
+    const client = createClient({
+      baseUrl: "https://api.milkey.ai",
+      apiKey: "mk_sk_test_secret",
+      fetch: vi.fn() as unknown as typeof fetch,
+    });
+
+    const tools = openai.responses.tools({
+      client,
+      delivery: "hosted",
+      approvalMode: {
+        never: {
+          tool_names: ["resolve-skill"],
+        },
+      },
+    });
+    const hostedTool = tools[0] as {
+      require_approval: {
+        never: {
+          tool_names: string[];
+        };
+      };
+    };
+
+    expect(hostedTool.require_approval).toEqual({
+      never: {
+        tool_names: ["resolve-skill"],
+      },
+    });
   });
 
   it("builds tool messages from assistant tool calls", async () => {

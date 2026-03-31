@@ -1,3 +1,4 @@
+import { getCapability, resolveMode, resolveRequestedMode } from "./capabilities";
 import { MilkeyToolCallError } from "./errors";
 import { getToolDescriptors, toCanonicalToolName, toProviderAlias } from "./tooling";
 import type {
@@ -42,7 +43,7 @@ function inlineTools({ allowedTools }: InlineToolOptions) {
     type: "function",
     name: descriptor.alias,
     description: descriptor.description,
-    parameters: descriptor.inputSchema,
+    parameters: toOpenAIStrictJsonSchema(descriptor.inputSchema),
     strict: true,
   }));
 }
@@ -139,32 +140,70 @@ function isOpenAIFunctionCallItem(value: unknown): value is OpenAIFunctionCallIt
 
 export const openai = {
   responses: {
+    capabilities: getCapability("openai.responses"),
+    resolveMode({
+      mode,
+      delivery,
+    }: {
+      mode?: Delivery;
+      delivery?: Delivery;
+    } = {}) {
+      const requestedMode = resolveRequestedMode({
+        mode,
+        delivery,
+        fallback: "auto",
+      });
+      return resolveMode("openai.responses", requestedMode);
+    },
     tools({
       client,
       allowedTools,
+      mode,
       delivery = "auto",
       approvalMode = "never",
-    }: InlineToolOptions & { delivery?: Delivery; approvalMode?: "never" | "always" }) {
-      return delivery === "inline"
+    }: InlineToolOptions & {
+      mode?: Delivery;
+      delivery?: Delivery;
+      approvalMode?: OpenAIHostedDeliveryOptions["approvalMode"];
+    }) {
+      const resolved = openai.responses.resolveMode({ mode, delivery });
+      return resolved.selectedMode === "inline"
         ? inlineTools({ client, allowedTools })
         : hostedTools({ client, allowedTools, approvalMode });
     },
     outputs: outputsFromResponse,
   },
   chat: {
+    capabilities: getCapability("openai.chat"),
+    resolveMode({
+      mode,
+      delivery,
+    }: {
+      mode?: Delivery;
+      delivery?: Delivery;
+    } = {}) {
+      const requestedMode = resolveRequestedMode({
+        mode,
+        delivery,
+        fallback: "inline",
+      });
+      return resolveMode("openai.chat", requestedMode);
+    },
     tools({
       client,
       allowedTools,
+      mode,
       delivery = "inline",
-    }: InlineToolOptions & { delivery?: Delivery }) {
-      return delivery === "hosted"
+    }: InlineToolOptions & { mode?: Delivery; delivery?: Delivery }) {
+      const resolved = openai.chat.resolveMode({ mode, delivery });
+      return resolved.selectedMode === "hosted"
         ? hostedTools({ client, allowedTools })
         : getToolDescriptors(allowedTools).map((descriptor) => ({
             type: "function",
             function: {
               name: descriptor.alias,
               description: descriptor.description,
-              parameters: descriptor.inputSchema,
+              parameters: toOpenAIStrictJsonSchema(descriptor.inputSchema),
               strict: true,
             },
           }));
@@ -198,12 +237,84 @@ export const openai = {
     },
   },
   realtime: {
+    capabilities: getCapability("openai.realtime"),
+    resolveMode({
+      mode,
+    }: {
+      mode?: Delivery;
+    } = {}) {
+      return resolveMode("openai.realtime", mode ?? "auto");
+    },
     tools({
       client,
       allowedTools,
+      mode,
       approvalMode = "never",
-    }: OpenAIHostedDeliveryOptions) {
+    }: OpenAIHostedDeliveryOptions & { mode?: Delivery }) {
+      openai.realtime.resolveMode({ mode });
       return hostedTools({ client, allowedTools, approvalMode });
     },
   },
 };
+
+function toOpenAIStrictJsonSchema(schema: unknown): unknown {
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+    return schema;
+  }
+
+  const input = schema as Record<string, unknown>;
+
+  if (input.type === "object") {
+    const properties = isRecord(input.properties) ? input.properties : {};
+    const required = Array.isArray(input.required) ? input.required : [];
+    const nextProperties = Object.fromEntries(
+      Object.entries(properties).map(([key, value]) => {
+        const propertySchema = toOpenAIStrictJsonSchema(value) as Record<string, unknown>;
+        return [
+          key,
+          required.includes(key) ? propertySchema : withNullableType(propertySchema),
+        ];
+      }),
+    );
+
+    return {
+      ...input,
+      properties: nextProperties,
+      required: Object.keys(nextProperties),
+      additionalProperties: false,
+    };
+  }
+
+  if (input.type === "array") {
+    return {
+      ...input,
+      items: toOpenAIStrictJsonSchema(input.items),
+    };
+  }
+
+  return input;
+}
+
+function withNullableType(schema: Record<string, unknown>): Record<string, unknown> {
+  const type = schema.type;
+
+  if (typeof type === "string") {
+    return {
+      ...schema,
+      type: [type, "null"],
+    };
+  }
+
+  if (Array.isArray(type) && !type.includes("null")) {
+    return {
+      ...schema,
+      type: [...type, "null"],
+    };
+  }
+
+  return schema;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}

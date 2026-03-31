@@ -49,7 +49,7 @@ const tools = milkey.openai.responses.tools({
 let response = await openai.responses.create({
   model,
   input: prompt,
-  tools,
+  tools: tools as any,
 });
 
 for (let turn = 1; turn <= maxTurns; turn += 1) {
@@ -63,7 +63,7 @@ for (let turn = 1; turn <= maxTurns; turn += 1) {
     model,
     previous_response_id: response.id,
     input: outputs,
-    tools,
+    tools: tools as any,
   });
 }
 

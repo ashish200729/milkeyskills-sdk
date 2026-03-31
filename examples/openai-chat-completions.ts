@@ -98,12 +98,12 @@ async function runToolLoop({
   for (let turn = 1; turn <= maxTurns; turn += 1) {
     const completion = await openai.chat.completions.create({
       model,
-      messages: transcript,
-      tools,
+      messages: transcript as any,
+      tools: tools as any,
       tool_choice: "auto",
     });
 
-    const assistantMessage = completion.choices[0]?.message;
+    const assistantMessage = completion.choices[0]?.message as any;
     if (!assistantMessage) {
       throw new Error(`No assistant message returned on turn ${turn}.`);
     }
@@ -111,7 +111,7 @@ async function runToolLoop({
     transcript.push({
       role: "assistant",
       content: assistantMessage.content ?? "",
-      tool_calls: assistantMessage.tool_calls?.map((toolCall) => ({
+      tool_calls: assistantMessage.tool_calls?.map((toolCall: any) => ({
         id: toolCall.id,
         type: "function",
         function: {

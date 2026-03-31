@@ -131,7 +131,14 @@ export interface GetSkillReferenceInput {
 export interface OpenAIHostedDeliveryOptions {
   client: MilkeyClient;
   allowedTools?: CanonicalToolName[];
-  approvalMode?: "never" | "always";
+  approvalMode?: "never" | "always" | {
+    never?: {
+      tool_names: string[];
+    };
+    always?: {
+      tool_names: string[];
+    };
+  };
   serverLabel?: string;
   serverDescription?: string;
 }

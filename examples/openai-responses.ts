@@ -44,7 +44,7 @@ const response = await openai.responses.create({
   input:
     process.env.TEST_PROMPT ??
     "Find the best Milkey skill for PostgreSQL query optimization.",
-  tools,
+  tools: tools as any,
 });
 
 console.log(response.output_text);
