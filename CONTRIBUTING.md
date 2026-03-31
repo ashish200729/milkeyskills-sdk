@@ -28,6 +28,8 @@ Use clear commit messages. Conventional commits are recommended because they imp
 - `fix: handle problem responses correctly`
 - `docs: improve quick start`
 
+While the SDK is still pre-1.0, release automation is configured to keep additive feature work on the patch line by default.
+
 ## Required one-time setup
 
 For automated npm publishing, configure one of these:

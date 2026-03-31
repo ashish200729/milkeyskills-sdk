@@ -41,6 +41,8 @@ npm publish --access public --otp=YOUR_6_DIGIT_CODE
 
 ## Version bumps
 
+This repository currently treats pre-1.0 feature work as patch releases in `release-please` so additive SDK improvements continue in the `0.1.x` line unless you intentionally change that policy.
+
 Patch release:
 
 ```bash
